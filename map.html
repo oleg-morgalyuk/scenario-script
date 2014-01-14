@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+	<meta name="apple-mobile-web-app-capable" content="yes"/>
+	<meta name="format-detection" content="telephone=no"/>
+	<title>Map</title>
+	<!-- Libraries -->
+	<script src="engine/js/libraries/utils.js"></script>
+	<script src="engine/js/libraries/expand.js"></script>
+	<script src="http://knockoutjs.com/downloads/knockout-2.3.0.js"></script>
+</head>
+<body>
+<button data-bind="click: getJSON" style="position: fixed; top: 0; left: 0;">Show JSON</button>
+<table border="1">
+	<colgroup>
+		<col width="200" />
+		<col width="150" />
+		<col width="50" />
+		<col width="60" />
+	</colgroup>
+	<thead>
+	<tr>
+		<th>NAME</th>
+		<th>Image</th>
+		<th>Visits</th>
+		<th></th>
+	</tr>
+	</thead>
+	<tbody data-bind="foreach: slides">
+	<tr>
+		<td data-bind="text: name"></td>
+		<td><img data-bind="attr: {src: url}" /></td>
+		<td><input type="text" data-bind="value: visits" maxlength="8"/></td>
+		<td><button data-bind="click: $parent.addToVisit">add</button></td>
+	</tr>
+	</tbody>
+</table>
+<script>
+	defaultVisitNumber = window.location.search.replace("?", '') || "1";
+	function loadJson(json, callBack){
+		var chapters, allSlides = [];
+		utils.ajax(json, function(){
+			if(this.readyState === 4){
+				structure = JSON.parse(this.responseText);
+				chapters = structure.chapters;
+
+				chapters.forEach(function(chapter){
+					var slides = chapter.slides,i = 0;
+					for( i = 0; i< slides.length; i++){
+						allSlides.push({
+							"name" : slides[i],
+							"url" : "content/images/thumbs/" + slides[i] + ".png",
+							"visits": defaultVisitNumber
+						});
+						//console.log(slides[i]);
+					}
+				});
+				callBack(allSlides);
+			}
+		}, true);
+	}
+	loadJson('content/structure.json', function(slides){
+		viewModel = {};
+		viewModel.slides = slides;
+		viewModel.slidesJSON = ko.observableArray([]);
+		viewModel.addToVisit = function(item){
+			var arr = [], temp = item.visits, length ,i;
+			if(temp.indexOf(",") > -1){
+				temp = temp.split(",");
+				length = temp.length;
+				for(i=0; i < length; i++){
+					arr[i] = parseInt(temp[i]);
+				}
+			} else {
+				arr = [parseInt(temp)];
+			}
+			viewModel.slidesJSON.push({
+				"id": item.name,
+				"visits": arr
+			});
+		};
+		viewModel.getJSON = function(){
+			var jsonString = JSON.stringify(viewModel.slidesJSON());
+			console.log(jsonString.slice(1,jsonString.length-1));
+		};
+		ko.applyBindings(viewModel);
+	});
+</script>
+</body>
+</html>
