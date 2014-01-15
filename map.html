@@ -8,8 +8,6 @@
 	<meta name="format-detection" content="telephone=no"/>
 	<title>Map</title>
 	<!-- Libraries -->
-	<script src="engine/js/libraries/utils.js"></script>
-	<script src="engine/js/libraries/expand.js"></script>
 	<script src="http://knockoutjs.com/downloads/knockout-2.3.0.js"></script>
 </head>
 <body>
@@ -39,10 +37,16 @@
 	</tbody>
 </table>
 <script>
-	defaultVisitNumber = window.location.search.replace("?", '') || "1";
+	var defaultVisitNumber = window.location.search.replace("?", '') || "1",
+		defaultURL = "",
+		hash = window.location.hash.replace("#", '');
+	if(hash !== ''){
+		defaultURL = "../"+ hash +"/";
+	}
 	function loadJson(json, callBack){
-		var chapters, allSlides = [];
-		utils.ajax(json, function(){
+		var chapters, allSlides = [],
+		xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function(){
 			if(this.readyState === 4){
 				structure = JSON.parse(this.responseText);
 				chapters = structure.chapters;
@@ -52,7 +56,7 @@
 					for( i = 0; i< slides.length; i++){
 						allSlides.push({
 							"name" : slides[i],
-							"url" : "content/images/thumbs/" + slides[i] + ".png",
+							"url" : defaultURL + "content/images/thumbs/" + slides[i] + ".png",
 							"visits": defaultVisitNumber
 						});
 						//console.log(slides[i]);
@@ -60,9 +64,11 @@
 				});
 				callBack(allSlides);
 			}
-		}, true);
+		};
+		xhr.open('GET', json, true);
+		xhr.send(null);
 	}
-	loadJson('content/structure.json', function(slides){
+	loadJson(defaultURL + 'content/structure.json', function(slides){
 		viewModel = {};
 		viewModel.slides = slides;
 		viewModel.slidesJSON = ko.observableArray([]);
