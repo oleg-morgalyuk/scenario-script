@@ -10,16 +10,37 @@
 	<!-- Libraries -->
 	<script src="http://knockoutjs.com/downloads/knockout-2.3.0.js"></script>
 	<style>
-		.added{
-			background: #efefef;
-			color: #777777;
+		.added td *:not(.remove){
+			opacity: .4;
+		}
+		.remove{
+			display: none;
+		}
+		.added .remove{
+			display: block;
+		}
+		table{
+			border-collapse: collapse;
+			border: 1px solid #666;
+			margin-top: 30px;
+		}
+		td{
+			padding: 5px 10px;
+		}
+		input[type='text']{
+			width: 100px;
+			border: 1px solid #999;
+			-webkit-appearance: none;
+		}
+		img{
+			border: 1px solid #777;
 		}
 	</style>
 </head>
 <body>
 <button data-bind="click: getJSON.bind($data, false)" style="position: fixed; top: 0; left: 0;">Show in console</button>
 <button data-bind="click: getJSON.bind($data, true)" style="position: fixed; top: 0; left: 130px;">Show in alert</button>
-<table border="1">
+<table border="1" cellspacing="5">
 	<colgroup>
 		<col width="200" />
 		<col width="150" />
@@ -28,25 +49,28 @@
 	</colgroup>
 	<thead>
 	<tr>
-		<th>NAME</th>
-		<th>Image</th>
+		<th>Slide Id</th>
+		<th>Thumb</th>
 		<th>Visits</th>
 		<th></th>
 	</tr>
 	</thead>
 	<tbody data-bind="foreach: slides">
-	<tr data-bind="css: {added: added}">
-		<td data-bind="text: name"></td>
+	<tr data-bind="css: {added: added}, click: addToVisit">
+		<td>
+			<p data-bind="text: name"></p>
+			<button class="remove" data-bind="click: removeFromVisit.bind($data)">remove</button>
+		</td>
 		<td><img data-bind="attr: {src: url}" /></td>
 		<td><input type="text" data-bind="value: visits" maxlength="8" /></td>
 		<td>
-			<button data-bind="click: $parent.addToVisit">add</button>
+			<button data-bind="">add</button>
 		</td>
 	</tr>
 	</tbody>
 </table>
 <script>
-	var defaultVisitNumber = window.location.search.replace("?", '') || "1", defaultURL = "", hash = window.location.hash.replace("#", '');
+	var defaultVisitNumber = window.location.search.replace("?", '') || "1", defaultURL = "", hash = window.location.hash.replace("#", ''), viewModel = {}, slidesidInVisit = [], slideVisits = {};
 	if(hash !== ''){
 		defaultURL = "../" + hash + "/";
 	}
@@ -64,7 +88,7 @@
 							"name": slides[i],
 							"added": ko.observable(false),
 							"url": defaultURL + "content/images/thumbs/" + slides[i] + ".png",
-							"visits": defaultVisitNumber
+							"visits": ko.observable(defaultVisitNumber)
 						});
 					}
 				});
@@ -74,36 +98,38 @@
 		xhr.open('GET', json, true);
 		xhr.send(null);
 	}
+	slideVisits.toString = function(){
+		var i, result = [];
+		for(i = 0; i < slidesidInVisit.length; i++){
+			result.push('{"id":"' + slidesidInVisit[i] + '","visits":[' + slideVisits[slidesidInVisit[i]].visits() + ']}');
+		}
+		return result.join(",");
+	};
 	loadJson(defaultURL + 'content/structure.json', function(slides){
-		viewModel = {};
 		viewModel.slides = slides;
-		viewModel.slidesJSON = ko.observableArray([]);
-		viewModel.addToVisit = function(item){
-			var arr = [], temp = item.visits, length , i;
-			if(temp.indexOf(",") > -1){
-				temp = temp.split(",");
-				length = temp.length;
-				for(i = 0; i < length; i++){
-					arr[i] = parseInt(temp[i]);
-				}
-			}else{
-				arr = [parseInt(temp)];
+		addToVisit = function(item){
+			slideVisits[item.name] = item;
+			if(slidesidInVisit.indexOf(item.name) === -1){
+				slidesidInVisit.push(item.name);
+				item.added(true);
 			}
-			viewModel.slidesJSON.push({
-				"id": item.name,
-				"visits": arr
-			});
-			item.added(true);
 		};
-		viewModel.getJSON = function(showInAlert){
-			var jsonString = JSON.stringify(viewModel.slidesJSON()), result = jsonString.slice(1, jsonString.length - 1);
+		removeFromVisit = function(item, event){
+			console.log(arguments);
+			delete slideVisits[item.name];
+			slidesidInVisit.splice(slidesidInVisit.indexOf(item.name), 1);
+			item.added(false);
+			event.stopPropagation();
+			return false;
+		};
+		getJSON = function(showInAlert){
+			var result = slideVisits.toString();
 			if(!showInAlert){
 				console.log(result);
 			}else{
 				alert(result);
 			}
 		};
-
 		ko.applyBindings(viewModel);
 	});
 </script>
