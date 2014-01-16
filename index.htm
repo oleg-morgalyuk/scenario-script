@@ -10,15 +10,9 @@
 	<!-- Libraries -->
 	<script src="http://knockoutjs.com/downloads/knockout-2.3.0.js"></script>
 	<style>
-		.remove{
-			display: none;
-		}
 		.added{
 			background: #efefef;
 			color: #777777;
-		}
-		.added .remove{
-			display: block;
 		}
 	</style>
 </head>
@@ -47,7 +41,6 @@
 		<td><input type="text" data-bind="value: visits" maxlength="8" /></td>
 		<td>
 			<button data-bind="click: $parent.addToVisit">add</button>
-			<button class="remove" data-bind="click: $parent.removeFromVisit">remove</button>
 		</td>
 	</tr>
 	</tbody>
@@ -101,12 +94,6 @@
 				"visits": arr
 			});
 			item.added(true);
-		};
-		viewModel.removeFromVisit = function(addedItem){
-			addedItem.added(false);
-			viewModel.slidesJSON(viewModel.slidesJSON.remove(function(item){
-				return item.name === addedItem.name;
-			}));
 		};
 		viewModel.getJSON = function(showInAlert){
 			var jsonString = JSON.stringify(viewModel.slidesJSON()), result = jsonString.slice(1, jsonString.length - 1);
